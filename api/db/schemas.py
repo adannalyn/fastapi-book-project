@@ -50,7 +50,8 @@ class InMemoryDB:
         Returns:
             Book: Added book.
         """
-        self.books.update({book.id: book})
+        self.books[book.id] = book
+        return book
 
     def get_book(self, book_id: int) -> Book:
         """Gets a specific book from database.
@@ -84,3 +85,5 @@ class InMemoryDB:
         """
         if book_id in self.books:
             del self.books[book_id]
+            return True
+        return False
