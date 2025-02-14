@@ -14,27 +14,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Respository
-      - uses: actions/checkout@4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
         with:
-	  python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: pytest
- deploy:
-   name: Deploy FastAPI App
-   if: github.event_name == 'push'
-   runs-on: ubuntu-latest
+          python-version: "3.11"
 
-   steps:
-     - name: checkout Respository
-       uses: actions/checkout@4
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-     - name: Deploy Fastapi
-       run: |
-         echo "Deploy FastAPI..."
-	 # Pull latest changes
-	 git pull origin main
+      - name: Run Tests
+        run: pytest
+          
+  deploy:
+    name: Deploy FastAPI App
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
 
-	 sudo systemctl restart fastapi
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-	 sudo systemctl restart nginx
+      - name: Deploy FastAPI with Nginx
+        run: |
+          echo "Deploying FastAPI..."
+          # Pull latest changes
+          git pull origin main
+          
+          # Restart FastAPI service (Modify based on your server setup)
+          sudo systemctl restart fastapi
+
+          # Restart Nginx to apply new changes
+          sudo systemctl restart nginx
