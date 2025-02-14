@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   pull_request:
     branches:
-      - main
+      - feature/AmazingFeature
   push:
     branches:
-      - main
+      - feature/AmazingFeature
 
 jobs:
   test:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Run Tests
         run: pytest
-          
+
   deploy:
     name: Deploy FastAPI App
     if: github.event_name == 'push'
@@ -43,10 +43,12 @@ jobs:
         run: |
           echo "Deploying FastAPI..."
           # Pull latest changes
-          git pull origin main
-          
-          # Restart FastAPI service (Modify based on your server setup)
-          sudo systemctl restart fastapi
+          git pull origin feature/AmazingFeature
 
-          # Restart Nginx to apply new changes
+          
+          # Restart FastAPI Manually
+          pkill -f "uvicorn"
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
+
+          # Restart Nginx
           sudo systemctl restart nginx
