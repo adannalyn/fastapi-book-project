@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   pull_request:
     branches:
-      - main
+      - feature/AmazingFeature
   push:
     branches:
-      - main
+      - feature/AmazingFeature
 
 jobs:
   test:
@@ -43,7 +43,8 @@ jobs:
         run: |
           echo "Deploying FastAPI..."
           # Pull latest changes
-          git pull origin main
+          git pull origin feature/AmazingFeature
+
           
           # Restart FastAPI Manually
           pkill -f "uvicorn"
