@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Respository
+      - uses: actions/checkout@4
+        with:
+	  python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest
+ deploy:
+   name: Deploy FastAPI App
+   if: github.event_name == 'push'
+   runs-on: ubuntu-latest
+
+   steps:
+     - name: checkout Respository
+       uses: actions/checkout@4
+
+     - name: Deploy Fastapi
+       run: |
+         echo "Deploy FastAPI..."
+	 # Pull latest changes
+	 git pull origin main
+
+	 sudo systemctl restart fastapi
+
+	 sudo systemctl restart nginx
