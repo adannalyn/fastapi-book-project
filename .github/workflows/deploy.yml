@@ -1,49 +1,46 @@
-name: Deploy FastAPI App
+name: Deploy FastAPI to EC2
 
 on:
   push:
     branches:
-      - feature/AmazingFeature
+      - feature/AmazingFeature  # Trigger on pushes to this branch
 
 jobs:
   deploy:
-    name: Deploy FastAPI to EC2
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set Up SSH Key
+      - name: Set up SSH Key 🔑
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" | tr -d '\r' | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
 
-      - name: Deploy to EC2
+      - name: Deploy to EC2 🚀
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            echo "Connected to EC2 instance!"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          
+          echo "✅ Connected to EC2 instance!"
 
-            # Navigate to project directory
-            cd ~/fastapi-book-project
+          # Navigate to project directory
+          cd ~/fastapi-book-project
 
-            # Authenticate GitHub with access token
-            git remote set-url origin https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/adannalyn/fastapi-book-project.git
-            
-            # Pull latest changes
-            git pull origin feature/AmazingFeature
+          # Pull latest changes from GitHub
+          git pull origin feature/AmazingFeature
 
-            # Install dependencies if needed
-            pip install -r requirements.txt
+          # Install dependencies
+          pip install -r requirements.txt
 
-            # Restart FastAPI
-            pkill -f "uvicorn" || true
-            nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+          # Restart FastAPI (Uvicorn)
+          pkill -f "uvicorn" || true
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
 
-            # Restart Nginx
-            sudo systemctl restart nginx
+          # Restart Nginx
+          sudo systemctl restart nginx
 
-            echo "Deployment successful! 🚀"
+          echo "🚀 Deployment successful!"
           EOF
