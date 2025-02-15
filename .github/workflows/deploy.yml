@@ -4,11 +4,7 @@ on:
   push:
     branches:
       - feature/AmazingFeature
-  workflow_run:
-    workflows: ["Run Tests"]
-    types:
-      - completed
-  workflow_dispatch:  # 👈 This lets you trigger it manually!
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   deploy:
@@ -18,39 +14,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH Key 🔑
+      - name: Setup SSH Key from File 🔑
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+          cp deploy_key.pem ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
 
-      - name: Debug SSH Directory 🛠
-        run: ls -la ~/.ssh        
+      - name: Debug SSH Connection 🛠
+        run: ssh -o StrictHostKeyChecking=no ubuntu@16.170.208.2 "echo '✅ Connected to EC2 instance!'"
 
       - name: Deploy to EC2 🚀
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          
-          echo "✅ Connected to EC2 instance!"
-
-          # Navigate to project directory
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@your-ec2-ip << 'EOF'
+          echo "✅ Connected to EC2!"
           cd ~/fastapi-book-project
-
-          # Pull latest changes from GitHub
           git pull origin feature/AmazingFeature
-
-          # Install dependencies
           pip install -r requirements.txt
-
-          # Restart FastAPI (Uvicorn)
           pkill -f "uvicorn" || true
           nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
-
-          # Restart Nginx
           sudo systemctl restart nginx
-
           echo "🚀 Deployment successful!"
           EOF
