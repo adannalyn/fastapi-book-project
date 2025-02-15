@@ -1,12 +1,15 @@
 name: Deploy FastAPI to EC2
 
 on:
-  push:
-    branches:
-      - feature/AmazingFeature  # Trigger on pushes to this branch
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - completed
+  workflow_dispatch:
 
 jobs:
   deploy:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -15,17 +18,15 @@ jobs:
 
       - name: Setup SSH Key 🔑
         run: |
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" | base64 --decode > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/id_rsa
-      
-      
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+
       - name: Debug SSH Directory 🛠
         run: ls -la ~/.ssh        
-      
 
       - name: Deploy to EC2 🚀
         run: |
