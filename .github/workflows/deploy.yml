@@ -10,10 +10,13 @@ deploy:
     - name: Deploy FastAPI with Nginx
       run: |
         echo "Deploying FastAPI..."
+    - name: Save EC2 Host to File
+      run: echo "16.170.208.2" > ec2_host.txt
+
     - name: Read EC2 Host
       run: |
-        EC2_HOST=$(cat ~/ec2_host.txt)
-        echo "Using EC2 Host: $EC2_HOST"
+      	EC2_HOST=$(cat ec2_host.txt)
+    	echo "Using EC2 Host: $EC2_HOST"
 
 
         # Connect to EC2 and pull latest changes using GitHub token
