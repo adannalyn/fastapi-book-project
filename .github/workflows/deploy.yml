@@ -22,6 +22,9 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
       
+      - name: Debug SSH Directory 🛠
+        run: ls -la ~/.ssh        
+      
 
       - name: Deploy to EC2 🚀
         run: |
