@@ -1,0 +1,33 @@
+deploy:
+  name: Deploy FastAPI App
+  if: github.event_name == 'push'
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Deploy FastAPI with Nginx
+      run: |
+        echo "Deploying FastAPI..."
+    - name: Read EC2 Host
+      run: |
+        EC2_HOST=$(cat ~/ec2_host.txt)
+        echo "Using EC2 Host: $EC2_HOST"
+
+
+        # Connect to EC2 and pull latest changes using GitHub token
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~/fastapi-book-project
+
+          # Set up Git to use the token for authentication
+          git remote set-url origin https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/adannalyn/fastapi-book-project.git
+          git pull origin feature/AmazingFeature
+
+          # Restart FastAPI
+          pkill -f "uvicorn"
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+
+          # Restart Nginx
+          sudo systemctl restart nginx
+        EOF
