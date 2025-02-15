@@ -1,36 +1,49 @@
-deploy:
-  name: Deploy FastAPI App
-  if: github.event_name == 'push'
-  runs-on: ubuntu-latest
+name: Deploy FastAPI App
 
-  steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+on:
+  push:
+    branches:
+      - feature/AmazingFeature
 
-    - name: Deploy FastAPI with Nginx
-      run: |
-        echo "Deploying FastAPI..."
-    - name: Save EC2 Host to File
-      run: echo "16.170.208.2" > ec2_host.txt
+jobs:
+  deploy:
+    name: Deploy FastAPI to EC2
+    runs-on: ubuntu-latest
 
-    - name: Read EC2 Host
-      run: |
-      	EC2_HOST=$(cat ec2_host.txt)
-    	echo "Using EC2 Host: $EC2_HOST"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
+      - name: Set Up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-        # Connect to EC2 and pull latest changes using GitHub token
-        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ~/fastapi-book-project
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            echo "Connected to EC2 instance!"
 
-          # Set up Git to use the token for authentication
-          git remote set-url origin https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/adannalyn/fastapi-book-project.git
-          git pull origin feature/AmazingFeature
+            # Navigate to project directory
+            cd ~/fastapi-book-project
 
-          # Restart FastAPI
-          pkill -f "uvicorn"
-          nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+            # Authenticate GitHub with access token
+            git remote set-url origin https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/adannalyn/fastapi-book-project.git
+            
+            # Pull latest changes
+            git pull origin feature/AmazingFeature
 
-          # Restart Nginx
-          sudo systemctl restart nginx
-        EOF
+            # Install dependencies if needed
+            pip install -r requirements.txt
+
+            # Restart FastAPI
+            pkill -f "uvicorn" || true
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+
+            # Restart Nginx
+            sudo systemctl restart nginx
+
+            echo "Deployment successful! 🚀"
+          EOF
