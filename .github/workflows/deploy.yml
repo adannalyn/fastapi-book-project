@@ -15,10 +15,13 @@ jobs:
 
       - name: Set up SSH Key 🔑
         run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" | tr -d '\r' | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
+      
 
       - name: Deploy to EC2 🚀
         run: |
