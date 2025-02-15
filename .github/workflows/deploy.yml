@@ -1,10 +1,14 @@
 name: Deploy FastAPI to EC2
 
 on:
+  push:
+    branches:
+      - feature/AmazingFeature
   workflow_run:
     workflows: ["Run Tests"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   deploy:
